@@ -15,7 +15,7 @@ SECRET_KEY = 'django-insecure-9krlf(t#^5v6pu)0c#eezw^h&@_2k(+*!8&8@4yaj^z7ta!z_c
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost,tiendamusical.onrender.com").split(",")
 
 
 # Application definition
