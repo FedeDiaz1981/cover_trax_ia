@@ -70,9 +70,7 @@ WSGI_APPLICATION = 'tienda_project.wsgi.application'
 
 #postgres://usuario:contraseña@internal-url:5432/dbname
 
-DATABASE_URL = os.getenv("postgresql://federico_diaz_user:lebNRcnNrDG20fF0PQCwBYpvSAYfGhgk@dpg-cve49cin91rc73be4k60-a/federico_diaz")
-
-DATABASE_URL = os.getenv("DATABASE_URL")  # Obtener la URL de la base de datos desde Render
+DATABASE_URL = os.getenv("postgres://usuario:contraseña@dpg-cve49cin91rc73be4k60-a/federico_diaz")
 
 if DATABASE_URL:
     DATABASES = {
