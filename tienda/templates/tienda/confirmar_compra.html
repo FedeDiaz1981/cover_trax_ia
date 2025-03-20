@@ -1,0 +1,116 @@
+{% extends "tienda/base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center fw-bold text-primary mb-4" data-aos="fade-down">🛍️ Confirmación de Compra</h2>
+    {% load carrito_filters %}
+    <div class="row">
+        <!-- Tabla de productos -->
+        <div class="col-lg-8" data-aos="fade-right">
+            <div class="table-responsive shadow-lg rounded">
+                <table class="table table-striped align-middle">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Precio Unitario</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key, item in carrito.items %}
+                        <tr>
+                            <td class="fw-bold">{{ item.nombre }}</td>
+                            <td>{{ item.cantidad }}</td>
+                            <td class="text-success fw-bold">${{ item.precio }}</td>
+                            <td class="text-danger fw-bold">${{ item.precio|multiply:item.cantidad|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Opción de retiro o envío -->
+        <div class="col-lg-4 d-flex align-items-center" data-aos="fade-left">
+            <div class="card shadow-lg p-4">
+                <h3 class="fw-bold text-success">💰 Total: ${{ carrito_total|floatformat:2 }}</h3>
+                
+                <form action="#" method="post">
+                    {% csrf_token %}
+                    <h5 class="mt-3">🚚 ¿Cómo quieres recibir tu compra?</h5>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="radio" name="envio" id="retiro" value="retiro" checked>
+                        <label class="form-check-label fw-bold" for="retiro">🛍️ Retiro en el local</label>
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="radio" name="envio" id="envio" value="envio">
+                        <label class="form-check-label fw-bold" for="envio">📦 Envío a domicilio</label>
+                    </div>
+
+                    <!-- Datos para envío -->
+                    <div id="datos_envio" class="mt-3 d-none">
+                        <h5>📍 Datos de Envío</h5>
+                        <input type="text" class="form-control mb-2" placeholder="Dirección" name="direccion">
+                        <input type="text" class="form-control mb-2" placeholder="Ciudad" name="ciudad">
+                        <input type="text" class="form-control mb-2" placeholder="Código Postal" name="codigo_postal">
+                    </div>
+
+                    <hr>
+
+                    <h5 class="mt-3">💳 Métodos de Pago</h5>
+                    
+                    <!-- Botón de MercadoPago -->
+                    <div class="mt-3">
+                        <script src="https://sdk.mercadopago.com/js/v2"></script>
+                        <div id="wallet_container"></div>
+                        <script>
+                            const mp = new MercadoPago("TU_PUBLIC_KEY", { locale: "es-AR" });
+                            mp.checkout({
+                                preference: {
+                                    id: "{{ mercado_pago_preference_id }}"
+                                },
+                                render: {
+                                    container: "#wallet_container",
+                                    label: "Pagar con MercadoPago"
+                                }
+                            });
+                        </script>
+                    </div>
+
+                    <!-- Botón de PayPal -->
+                    <div id="paypal-button-container" class="mt-3"></div>
+                    <script src="https://www.paypal.com/sdk/js?client-id=TU_PAYPAL_CLIENT_ID&currency=USD"></script>
+                    <script>
+                        paypal.Buttons({
+                            createOrder: function(data, actions) {
+                                return actions.order.create({
+                                    purchase_units: [{
+                                        amount: {
+                                            value: "{{ carrito_total|floatformat:2 }}"
+                                        }
+                                    }]
+                                });
+                            },
+                            onApprove: function(data, actions) {
+                                return actions.order.capture().then(function(details) {
+                                    alert('Pago exitoso por ' + details.payer.name.given_name);
+                                    window.location.href = "/compra-exitosa/";
+                                });
+                            }
+                        }).render('#paypal-button-container');
+                    </script>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('input[name="envio"]').forEach(radio => {
+        radio.addEventListener("change", function() {
+            document.getElementById("datos_envio").classList.toggle("d-none", this.value !== "envio");
+        });
+    });
+</script>
+{% endblock %}

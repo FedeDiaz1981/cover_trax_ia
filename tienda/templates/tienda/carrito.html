@@ -1,0 +1,64 @@
+{% extends "tienda/base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center fw-bold text-primary mb-4" data-aos="fade-down" data-aos-duration="1000">🛒 Carrito de Compras</h2>
+    {% load carrito_filters %}
+    {% if carrito %}
+    <div class="row">
+        <!-- Tabla de productos en el carrito -->
+        <div class="col-lg-8" data-aos="fade-right" data-aos-duration="1000">
+            <div class="table-responsive shadow-lg rounded">
+                <table class="table table-striped align-middle">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th>Imagen</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Precio</th>
+                            <th>Subtotal</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key, item in carrito.items %}
+                        <tr>
+                            <td>
+                                <img src="{{ item.imagen }}" alt="{{ item.nombre }}" class="img-fluid rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                            </td>
+                            <td class="fw-bold">{{ item.nombre }}</td>
+                            <td>{{ item.cantidad }}</td>
+                            <td class="text-success fw-bold">${{ item.precio }}</td>
+                            <td class="text-danger fw-bold">${{ item.precio|multiply:item.cantidad|floatformat:2 }}</td>
+                            <td>
+                                <a href="{% url 'quitar_del_carrito' key %}" class="btn btn-danger btn-sm">❌ Quitar</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sección de resumen y botones -->
+        <div class="col-lg-4 d-flex align-items-center" data-aos="fade-left" data-aos-duration="1000">
+            <div class="card shadow-lg p-4 text-center">
+                <h3 class="fw-bold text-success">💰 Total: ${{ carrito_total|floatformat:2 }}</h3>
+                
+                <div class="mt-3">
+                    <a href="{% url 'tienda' %}" class="btn btn-primary w-100 mb-2">🛍️ Seguir Comprando</a>
+                    <a href="{% url 'vaciar_carrito' %}" class="btn btn-danger w-100 mb-2">🗑 Vaciar Carrito</a>
+                    <a href="{% url 'confirmar_compra' %}" class="btn btn-success w-100">✅ Confirmar Compra</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning text-center" data-aos="zoom-in" data-aos-duration="1000">
+        <h4>😔 Tu carrito está vacío</h4>
+        <p>¡Añade productos y vuelve pronto!</p>
+        <a href="{% url 'tienda' %}" class="btn btn-primary">🛍️ Ir a la tienda</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

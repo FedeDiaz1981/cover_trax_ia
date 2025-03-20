@@ -1,0 +1,372 @@
+{% extends "tienda/base.html" %} {% block content %}
+<div class="container mt-5">
+  <h1 class="text-center mb-4">🎶 Tienda Musical</h1>
+
+  <div class="row">
+    <!-- Sección de Productos -->
+    <div class="col-md-9">
+      <h3 class="mb-3 text-primary">🔎 Encontrá tu próximo instrumento...</h3>
+      <div class="row" id="productos-container">
+        {% for producto in productos %}
+        <div class="col-md-4 mb-4" data-aos="fade-up">
+          <div class="card h-100 shadow-lg">
+            {% if producto.imagen %}
+            <img
+              src="{{ producto.imagen.url }}"
+              class="card-img-top"
+              alt="{{ producto.nombre }}"
+              style="height: 250px; object-fit: contain"
+            />
+            {% endif %}
+            <div class="card-body text-center">
+              <h5 class="card-title">{{ producto.nombre }}</h5>
+              <p class="card-text fw-bold text-success">
+                ${{ producto.precio }}
+              </p>
+              <button
+                class="btn btn-info w-100 ver-detalle"
+                data-id="{{ producto.id }}"
+                data-aos="zoom-in"
+              >
+                🔍 Ver Detalle
+              </button>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-center" data-aos="fade-up">
+          No hay productos disponibles.
+        </p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Chat de IA -->
+    <div class="col-md-3">
+      <div class="card p-3 shadow-lg">
+        <h5 class="text-center">💬 Te ayudo?</h5>
+        <div
+          id="chat-box"
+          class="p-2"
+          style="
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+          "
+        ></div>
+        <input
+          type="text"
+          id="chat-input"
+          class="form-control mt-2"
+          placeholder="Escribe tu consulta..."
+        />
+        <button id="send-chat" class="btn btn-primary w-100 mt-2">
+          Enviar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Bootstrap para Detalle del Producto -->
+<div
+  class="modal fade"
+  id="detalleModal"
+  tabindex="-1"
+  aria-labelledby="detalleModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="detalleModalLabel">
+          Detalles del Producto
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Cerrar"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="img-wrapper w-100 d-flex justify-content-center">
+          <img
+            id="detalle-imagen"
+            src=""
+            class="img-fluid mb-3"
+            style="object-fit: contain; max-height: calc(70vh - 225px)"
+          />
+        </div>
+        <h4 id="detalle-nombre"></h4>
+        <p id="detalle-descripcion"></p>
+        <h5 class="text-success" id="detalle-precio"></h5>
+
+        <!-- Cantidad y botón Agregar al Carrito -->
+        <div class="input-group mt-3">
+          <input
+            type="number"
+            id="detalle-cantidad"
+            class="form-control"
+            value="1"
+            min="1"
+          />
+          <button id="btn-agregar-carrito" class="btn btn-primary">
+            🛒 Agregar al Carrito
+          </button>
+        </div>
+
+        <div
+          id="mensaje-carrito"
+          class="text-success mt-2"
+          style="display: none"
+        >
+          Producto agregado al carrito.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Carga -->
+<div
+  class="modal fade"
+  id="modalCargando"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+  tabindex="-1"
+  aria-labelledby="modalCargandoLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-4">
+      <div class="modal-body">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <h5 class="mt-3">Agregando al carrito...</h5>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    let chatInput = document.getElementById("chat-input");
+    let chatBox = document.getElementById("chat-box");
+    let sendButton = document.getElementById("send-chat");
+
+    // Función para enviar el mensaje
+    function enviarMensaje() {
+      let userMessage = chatInput.value.trim();
+      if (userMessage === "") return;
+
+      // Mostrar el mensaje del usuario en el chat
+      chatBox.innerHTML += `<div><strong>Tú:</strong> ${userMessage}</div>`;
+
+      // Limpiar el input
+      chatInput.value = "";
+
+      // Enviar el mensaje al backend
+      fetch("{% url 'chat_ia' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: `message=${encodeURIComponent(userMessage)}`,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          // Mostrar la respuesta de la IA
+          chatBox.innerHTML += `<div><strong>IA:</strong> ${data.message}</div>`;
+
+          let productosContainer = document.getElementById(
+            "productos-container"
+          );
+          productosContainer.innerHTML = ""; // Limpiar productos actuales
+
+          if (data.productos.length === 0) {
+            productosContainer.innerHTML = `<p class="text-center">No encontramos productos según tu búsqueda.</p>`;
+          }
+
+          data.productos.forEach((producto) => {
+            productosContainer.innerHTML += `
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 shadow-lg">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">${producto.nombre}</h5>
+                                <p class="card-text fw-bold text-success">$${producto.precio}</p>
+                                <button class="btn btn-info w-100 ver-detalle" data-id="${producto.id}">🔍 Ver Detalle</button>
+                            </div>
+                        </div>
+                    </div>`;
+          });
+
+          // Auto-scroll hacia abajo en el chat
+          chatBox.scrollTop = chatBox.scrollHeight;
+        })
+        .catch((error) => console.error("Error en el chat:", error));
+    }
+
+    // Evento para el botón "Enviar"
+    sendButton.addEventListener("click", enviarMensaje);
+
+    // Evento para enviar el mensaje con "Enter"
+    chatInput.addEventListener("keypress", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault(); // Evitar salto de línea en el input
+        enviarMensaje();
+      }
+    });
+
+    // 🔹 Delegación de eventos para manejar el clic en productos dinámicos
+    document.addEventListener("click", function (event) {
+      if (event.target.classList.contains("ver-detalle")) {
+        let productoId = event.target.getAttribute("data-id");
+
+        fetch(`/detalle-producto/${productoId}/`)
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("detalle-nombre").innerText = data.nombre;
+            document.getElementById("detalle-descripcion").innerText =
+              data.descripcion;
+            document.getElementById(
+              "detalle-precio"
+            ).innerText = `$${data.precio}`;
+            document.getElementById("detalle-imagen").src =
+              data.imagen || "https://via.placeholder.com/500";
+
+            let modal = new bootstrap.Modal(
+              document.getElementById("detalleModal")
+            );
+            modal.show();
+          })
+          .catch((error) => console.error("Error cargando detalle:", error));
+      }
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    let modalElement = document.getElementById("detalleModal");
+    let modalDetalle = new bootstrap.Modal(modalElement);
+    let modalCargandoElement = document.getElementById("modalCargando");
+    let modalCargando = new bootstrap.Modal(modalCargandoElement);
+    let btnAgregarCarrito = document.getElementById("btn-agregar-carrito");
+
+    let productoIdSeleccionado = null;
+
+    // ✅ Delegación de eventos para manejar el clic en productos dinámicos
+    document.addEventListener("click", function (event) {
+      if (event.target.classList.contains("ver-detalle")) {
+        productoIdSeleccionado = event.target.getAttribute("data-id");
+
+        fetch(`/detalle-producto/${productoIdSeleccionado}/`)
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("detalle-nombre").innerText = data.nombre;
+            document.getElementById("detalle-descripcion").innerText =
+              data.descripcion;
+            document.getElementById(
+              "detalle-precio"
+            ).innerText = `$${data.precio}`;
+            document.getElementById("detalle-imagen").src =
+              data.imagen || "https://via.placeholder.com/500";
+
+            modalDetalle.show();
+          })
+          .catch((error) => console.error("Error cargando detalle:", error));
+      }
+    });
+
+    // ✅ Establecer cantidad en 1 al abrir el modal de detalle
+    modalElement.addEventListener("show.bs.modal", function () {
+      document.getElementById("detalle-cantidad").value = 1;
+    });
+
+    // ✅ Evento para agregar al carrito con bloqueo de pantalla
+    btnAgregarCarrito.addEventListener("click", function () {
+      let cantidad = document.getElementById("detalle-cantidad").value;
+
+      modalCargando.show(); // Mostrar modal de carga
+
+      fetch(`/agregar-al-carrito/${productoIdSeleccionado}/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: `cantidad=${encodeURIComponent(cantidad)}`,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            let mensajeCarrito = document.getElementById("mensaje-carrito");
+            mensajeCarrito.innerText = data.message;
+            mensajeCarrito.style.display = "block";
+            setTimeout(() => {
+              mensajeCarrito.style.display = "none";
+            }, 3000);
+          }
+        })
+        .catch((error) => console.error("Error al agregar al carrito:", error))
+        .finally(() => {
+          setTimeout(() => {
+            modalCargando.hide();
+            eliminarBackdrop();
+          }, 500);
+
+          setTimeout(() => {
+            modalDetalle.hide();
+            eliminarBackdrop();
+          }, 600);
+
+          fetch("/obtener-total-carrito/")
+            .then((response) => response.json())
+            .then((data) => {
+              document.getElementById(
+                "total-carrito"
+              ).innerText = `🛒 Total Carrito: $${data.total}`;
+            })
+            .catch((error) =>
+              console.error("Error obteniendo el total del carrito:", error)
+            );
+        });
+    });
+
+    // ✅ Asegurar que al cerrar el modal se elimine el backdrop
+    modalElement.addEventListener("hidden.bs.modal", eliminarBackdrop);
+    modalCargandoElement.addEventListener("hidden.bs.modal", eliminarBackdrop);
+
+    // ✅ Función para eliminar cualquier overlay de Bootstrap que bloquee la pantalla
+    function eliminarBackdrop() {
+      setTimeout(() => {
+        document
+          .querySelectorAll(".modal-backdrop")
+          .forEach((backdrop) => backdrop.remove());
+        document.body.classList.remove("modal-open");
+      }, 100);
+    }
+  });
+</script>
+<script>
+  // Inicializar AOS con configuraciones personalizadas
+  document.addEventListener("DOMContentLoaded", function () {
+    AOS.init({
+      duration: 1000, // Duración de la animación (en ms)
+      easing: "ease-in-out", // Tipo de transición
+      once: true, // La animación se ejecuta solo una vez
+      mirror: false, // No se repite al hacer scroll hacia arriba
+    });
+  });
+</script>
+
+{% endblock %}
