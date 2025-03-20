@@ -36,8 +36,3 @@ typing_extensions==4.12.2
 uritemplate==4.1.1
 urllib3==2.3.0
 whitenoise==6.9.0
-pip install gunicorn
-pip freeze > requirements.txt
-git add requirements.txt
-git commit -m "Agregado gunicorn"
-git push origin main
