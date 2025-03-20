@@ -68,9 +68,23 @@ WSGI_APPLICATION = 'tienda_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    "default": dj_database_url.config(default=os.getenv("postgresql://federico_diaz_user:lebNRcnNrDG20fF0PQCwBYpvSAYfGhgk@dpg-cve49cin91rc73be4k60-a/federico_diaz"), engine="django.db.backends.postgresql")
-}
+#postgres://usuario:contraseña@internal-url:5432/dbname
+
+DATABASE_URL = os.getenv("postgresql://federico_diaz_user:lebNRcnNrDG20fF0PQCwBYpvSAYfGhgk@dpg-cve49cin91rc73be4k60-a/federico_diaz")
+
+DATABASE_URL = os.getenv("DATABASE_URL")  # Obtener la URL de la base de datos desde Render
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.config(default=DATABASE_URL, engine="django.db.backends.postgresql")
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(os.path.dirname(__file__), "db.sqlite3"),
+        }
+    }
 
 
 # Password validation
