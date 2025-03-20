@@ -69,7 +69,7 @@ WSGI_APPLICATION = 'tienda_project.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(default=os.getenv('postgresql://federico_diaz_user:lebNRcnNrDG20fF0PQCwBYpvSAYfGhgk@dpg-cve49cin91rc73be4k60-a/federico_diaz'))
+    "default": dj_database_url.config(default=os.getenv("postgresql://federico_diaz_user:lebNRcnNrDG20fF0PQCwBYpvSAYfGhgk@dpg-cve49cin91rc73be4k60-a/federico_diaz"), engine="django.db.backends.postgresql")
 }
 
 
