@@ -1,6 +1,6 @@
 
 import os
-#import dj_database_url
+import dj_database_url
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -72,12 +72,20 @@ WSGI_APPLICATION = 'tienda_project.wsgi.application'
 
 #postgres://usuario:contraseña@internal-url:5432/dbname
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = os.getenv("postgres://usuario:contraseña@dpg-cve49cin91rc73be4k60-a/federico_diaz")
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.config(default=DATABASE_URL, engine="django.db.backends.postgresql")
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(os.path.dirname(__file__), "db.sqlite3"),
+        }
+    }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
