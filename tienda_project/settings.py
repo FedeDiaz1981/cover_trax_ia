@@ -43,6 +43,8 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+
 ROOT_URLCONF = 'tienda_project.urls'
 
 TEMPLATES = [
@@ -119,8 +121,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
@@ -141,3 +143,9 @@ SESSION_COOKIE_AGE = 86400  # Tiempo de sesión en segundos (1 día)
 
 OPENAI_API_KEY = "TU_OPENAI_API_KEY"
 GEMINI_API_KEY = "AIzaSyCaSwThGSjY4kIAi3ewcracZGPenlWFZ5A"
+
+
+RENDER = os.environ.get('RENDER', False)
+
+if RENDER:
+    ALLOWED_HOSTS.append('tu-nombre.onrender.com')  # cambia esto cuando tengas el nombre real
