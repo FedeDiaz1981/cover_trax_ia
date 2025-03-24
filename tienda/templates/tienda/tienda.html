@@ -42,7 +42,7 @@
     </div>
 
     <!-- Chat de IA -->
-    <div class="col-md-3">
+    <div class="col-md-3 d-none">
       <div class="card p-3 shadow-lg">
         <h5 class="text-center">💬 Te ayudo?</h5>
         <div
@@ -158,101 +158,55 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    let chatInput = document.getElementById("chat-input");
-    let chatBox = document.getElementById("chat-box");
-    let sendButton = document.getElementById("send-chat");
-
-    // Función para enviar el mensaje
-    function enviarMensaje() {
-      let userMessage = chatInput.value.trim();
-      if (userMessage === "") return;
-
-      // Mostrar el mensaje del usuario en el chat
-      chatBox.innerHTML += `<div><strong>Tú:</strong> ${userMessage}</div>`;
-
-      // Limpiar el input
-      chatInput.value = "";
-
-      // Enviar el mensaje al backend
-      fetch("{% url 'chat_ia' %}", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "X-CSRFToken": "{{ csrf_token }}",
-        },
-        body: `message=${encodeURIComponent(userMessage)}`,
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          // Mostrar la respuesta de la IA
-          chatBox.innerHTML += `<div><strong>IA:</strong> ${data.message}</div>`;
-
-          let productosContainer = document.getElementById(
-            "productos-container"
-          );
-          productosContainer.innerHTML = ""; // Limpiar productos actuales
-
-          if (data.productos.length === 0) {
-            productosContainer.innerHTML = `<p class="text-center">No encontramos productos según tu búsqueda.</p>`;
-          }
-
-          data.productos.forEach((producto) => {
-            productosContainer.innerHTML += `
-                    <div class="col-md-4 mb-4">
-                        <div class="card h-100 shadow-lg">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">${producto.nombre}</h5>
-                                <p class="card-text fw-bold text-success">$${producto.precio}</p>
-                                <button class="btn btn-info w-100 ver-detalle" data-id="${producto.id}">🔍 Ver Detalle</button>
-                            </div>
-                        </div>
-                    </div>`;
-          });
-
-          // Auto-scroll hacia abajo en el chat
-          chatBox.scrollTop = chatBox.scrollHeight;
-        })
-        .catch((error) => console.error("Error en el chat:", error));
-    }
-
-    // Evento para el botón "Enviar"
-    sendButton.addEventListener("click", enviarMensaje);
-
-    // Evento para enviar el mensaje con "Enter"
-    chatInput.addEventListener("keypress", function (event) {
-      if (event.key === "Enter") {
-        event.preventDefault(); // Evitar salto de línea en el input
-        enviarMensaje();
-      }
-    });
-
-    // 🔹 Delegación de eventos para manejar el clic en productos dinámicos
-    document.addEventListener("click", function (event) {
-      if (event.target.classList.contains("ver-detalle")) {
-        let productoId = event.target.getAttribute("data-id");
-
-        fetch(`/detalle-producto/${productoId}/`)
-          .then((response) => response.json())
-          .then((data) => {
-            document.getElementById("detalle-nombre").innerText = data.nombre;
-            document.getElementById("detalle-descripcion").innerText =
-              data.descripcion;
-            document.getElementById(
-              "detalle-precio"
-            ).innerText = `$${data.precio}`;
-            document.getElementById("detalle-imagen").src =
-              data.imagen || "https://via.placeholder.com/500";
-
-            let modal = new bootstrap.Modal(
-              document.getElementById("detalleModal")
-            );
-            modal.show();
+      const chatInput = document.getElementById("chat-input");
+      const sendButton = document.getElementById("send-chat");
+      const productosContainer = document.getElementById("productos-container");
+  
+      function enviarMensaje(event) {
+          event.preventDefault();
+          const userMessage = chatInput.value.trim();
+          if (!userMessage) return;
+  
+          chatInput.value = ""; // Limpiar input
+  
+          fetch("{% url 'chat_ia' %}", {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                  "X-CSRFToken": "{{ csrf_token }}"
+              },
+              body: `message=${encodeURIComponent(userMessage)}`
           })
-          .catch((error) => console.error("Error cargando detalle:", error));
+          .then(response => response.json())
+          .then(data => {
+              productosContainer.innerHTML = "";  // Limpiar productos actuales
+  
+              if (data.productos.length === 0) {
+                  productosContainer.innerHTML = `<p class="text-center">No se encontraron productos.</p>`;
+                  return;
+              }
+  
+              data.productos.forEach(producto => {
+                  productosContainer.innerHTML += `
+                      <div class="col-md-4 mb-4" data-aos="fade-up">
+                          <div class="card h-100 shadow-lg">
+                              <img src="${producto.imagen}" class="card-img-top d-none" alt="${producto.nombre}" style="height: 250px; object-fit: cover;">
+                              <div class="card-body text-center">
+                                  <h5 class="card-title">${producto.nombre}</h5>
+                                  <p class="card-text fw-bold text-success">$${producto.precio}</p>
+                                  <button class="btn btn-info w-100 ver-detalle" data-id="${producto.id}">🔍 Ver Detalle</button>
+                              </div>
+                          </div>
+                      </div>`;
+              });
+          })
+          .catch(error => console.error("Error con IA:", error));
       }
-    });
+  
+      // Eventos
+      document.getElementById("ia-form").addEventListener("submit", enviarMensaje);
   });
-</script>
+  </script>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
