@@ -182,3 +182,18 @@ def chat_ia(request):
         })
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
+
+def obtener_productos(request):
+    productos = Producto.objects.all()
+    data = {
+        "productos": [
+            {
+                "id": p.id,
+                "nombre": p.nombre,
+                "precio": float(p.precio),
+                "imagen": p.imagen.url if p.imagen else "",
+            }
+            for p in productos
+        ]
+    }
+    return JsonResponse(data)

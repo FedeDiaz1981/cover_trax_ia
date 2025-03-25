@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import tienda, cargar_productos, detalle_producto_ajax, obtener_total_carrito, agregar_al_carrito, quitar_del_carrito, actualizar_carrito, ver_carrito, vaciar_carrito, confirmar_compra, chat_ia
+from .views import * #tienda, cargar_productos, detalle_producto_ajax, obtener_total_carrito, agregar_al_carrito, obtener_productos 
+#from .views import quitar_del_carrito, actualizar_carrito, ver_carrito, vaciar_carrito, confirmar_compra, chat_ia
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -17,6 +18,7 @@ urlpatterns = [
     path("confirmar-compra/", confirmar_compra, name="confirmar_compra"),
     path("chat-ia/", chat_ia, name="chat_ia"),
     path("obtener-total-carrito/", obtener_total_carrito, name="obtener_total_carrito"),
+    path('obtener-productos/', obtener_productos, name='obtener_productos'),
 ] 
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

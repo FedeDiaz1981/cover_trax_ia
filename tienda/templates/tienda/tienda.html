@@ -6,6 +6,13 @@
     <!-- Sección de Productos -->
     <div class="col-md-9">
       <h3 class="mb-3 text-primary">🔎 Encontrá tu próximo instrumento...</h3>
+      <div class="text-center my-3">
+        <div class="text-center my-3">
+          <button id="btn-ver-todos" class="btn btn-secondary" style="display: none;">
+              🔄 Ver todos los productos
+          </button>
+      </div>
+      </div>
       <div class="row" id="productos-container">
         {% for producto in productos %}
         <div class="col-md-4 mb-4" data-aos="fade-up">
@@ -158,39 +165,40 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-      const chatInput = document.getElementById("chat-input");
-      const sendButton = document.getElementById("send-chat");
-      const productosContainer = document.getElementById("productos-container");
-  
-      function enviarMensaje(event) {
-          event.preventDefault();
-          const userMessage = chatInput.value.trim();
-          if (!userMessage) return;
-  
-          chatInput.value = ""; // Limpiar input
-  
-          fetch("{% url 'chat_ia' %}", {
-              method: "POST",
-              headers: {
-                  "Content-Type": "application/x-www-form-urlencoded",
-                  "X-CSRFToken": "{{ csrf_token }}"
-              },
-              body: `message=${encodeURIComponent(userMessage)}`
-          })
-          .then(response => response.json())
-          .then(data => {
-              productosContainer.innerHTML = "";  // Limpiar productos actuales
-  
-              if (data.productos.length === 0) {
-                  productosContainer.innerHTML = `<p class="text-center">No se encontraron productos.</p>`;
-                  return;
-              }
-  
-              data.productos.forEach(producto => {
-                  productosContainer.innerHTML += `
+    const chatInput = document.getElementById("chat-input");
+    const sendButton = document.getElementById("send-chat");
+    const productosContainer = document.getElementById("productos-container");
+
+    function enviarMensaje(event) {
+      event.preventDefault();
+      const userMessage = chatInput.value.trim();
+      if (!userMessage) return;
+
+      chatInput.value = ""; // Limpiar input
+
+      fetch("{% url 'chat_ia' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: `message=${encodeURIComponent(userMessage)}`,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          productosContainer.innerHTML = ""; // Limpiar productos actuales
+          document.getElementById("btn-ver-todos").style.display = "inline-block";
+
+          if (data.productos.length === 0) {
+            productosContainer.innerHTML = `<p class="text-center">No se encontraron productos.</p>`;
+            return;
+          }
+
+          data.productos.forEach((producto) => {
+            productosContainer.innerHTML += `
                       <div class="col-md-4 mb-4" data-aos="fade-up">
                           <div class="card h-100 shadow-lg">
-                              <img src="${producto.imagen}" class="card-img-top d-none" alt="${producto.nombre}" style="height: 250px; object-fit: cover;">
+                              <img src="${producto.imagen}" class="card-img-top d-none" alt="${producto.nombre}" style="height: 250px; object-fit: contain;">
                               <div class="card-body text-center">
                                   <h5 class="card-title">${producto.nombre}</h5>
                                   <p class="card-text fw-bold text-success">$${producto.precio}</p>
@@ -198,15 +206,17 @@
                               </div>
                           </div>
                       </div>`;
-              });
-          })
-          .catch(error => console.error("Error con IA:", error));
-      }
-  
-      // Eventos
-      document.getElementById("ia-form").addEventListener("submit", enviarMensaje);
+          });
+        })
+        .catch((error) => console.error("Error con IA:", error));
+    }
+
+    // Eventos
+    document
+      .getElementById("ia-form")
+      .addEventListener("submit", enviarMensaje);
   });
-  </script>
+</script>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -322,5 +332,41 @@
     });
   });
 </script>
+<script>
+ // Botón para mostrar todos los productos
+document.getElementById("btn-ver-todos").addEventListener("click", function () {
+    fetch("{% url 'obtener_productos' %}")  // ← Esta vista debe devolver todos los productos en JSON
+        .then(response => response.json())
+        .then(data => {
+            const productosContainer = document.getElementById("productos-container");
+            productosContainer.innerHTML = "";
+
+            if (data.productos.length === 0) {
+                productosContainer.innerHTML = `<p class="text-center">No hay productos disponibles.</p>`;
+                return;
+            }
+
+            // Ocultar el botón después de limpiar filtro
+            document.getElementById("btn-ver-todos").style.display = "none";
+
+            data.productos.forEach(producto => {
+                productosContainer.innerHTML += `
+                    <div class="col-md-4 mb-4" data-aos="fade-up">
+                        <div class="card h-100 shadow-lg">
+                            <img src="${producto.imagen}" class="card-img-top" alt="${producto.nombre}" style="height: 250px; object-fit: contain;">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">${producto.nombre}</h5>
+                                <p class="card-text fw-bold text-success">$${producto.precio}</p>
+                                <button class="btn btn-info w-100 ver-detalle" data-id="${producto.id}">🔍 Ver Detalle</button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        })
+        .catch(error => console.error("Error cargando productos:", error));
+});
+
+</script>
+
 
 {% endblock %}
