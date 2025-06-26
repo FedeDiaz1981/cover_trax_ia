@@ -1,0 +1,50 @@
+
+{% extends "tienda/base.html" %}
+
+{% block content %}
+<div class="container py-4">
+  <h2 class="mb-4 text-primary text-uppercase">Administrar Productos</h2>
+
+  <!-- Botón para agregar nuevo producto -->
+  <div class="mb-4 text-end">
+    <a href="{% url 'agregar_producto' %}" class="btn btn-primary">
+      ➕ Agregar nuevo producto
+    </a>
+  </div>
+  {% load humanize %}
+  <!-- Lista de productos cargados -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-light">
+      <h5 class="mb-0 text-secondary">🗂 Productos en la tienda</h5>
+    </div>
+    <div class="card-body">
+      {% if productos %}
+      <div class="row">
+        {% for producto in productos %}
+        <div class="col-md-4 mb-4">
+          <div class="card h-100">
+            {% if producto.imagen %}
+            <img src="{{ producto.imagen.url }}" class="card-img-top" style="height: 200px; object-fit: cover;"
+              alt="{{ producto.nombre }}">
+            {% endif %}
+            <div class="card-body text-center">
+              <h5 class="card-title">{{ producto.nombre }}</h5>
+              <p class="text-muted small">Modelo: {{ producto.modelo_compatible }}</p>
+              <p class="fw-bold text-success">${{ producto.precio|floatformat:0|intcomma }}</p>
+              <div class="d-flex justify-content-center gap-2 mt-2">
+                <a href="{% url 'editar_producto' producto.id %}" class="btn btn-sm btn-outline-primary">✏️ Editar</a>
+                <a href="{% url 'eliminar_producto' producto.id %}" class="btn btn-sm btn-outline-danger"
+                  onclick="return confirm('¿Estás seguro que querés eliminar este producto?');">🗑 Eliminar</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-center text-muted">No hay productos cargados aún.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

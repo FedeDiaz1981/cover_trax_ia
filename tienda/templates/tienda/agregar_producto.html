@@ -1,0 +1,76 @@
+{% extends "tienda/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="form-container mx-auto bg-white p-4 rounded shadow-sm" style="max-width: 700px;">
+    <h1 class="text-center mb-4 text-primary" style="font-family: 'Montserrat', sans-serif;">
+      {% if modo_edicion %}Editar Producto{% else %}Agregar Producto{% endif %}
+    </h1>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      {% for field in form %}
+        <div class="mb-3 row">
+          <label for="{{ field.id_for_label }}" class="col-sm-3 col-form-label fw-semibold text-secondary">{{ field.label }}</label>
+          <div class="col-sm-9">
+            {% if field.name == 'precio' %}
+              <input type="text"
+                     id="precio"
+                     name="precio"
+                     class="form-control"
+                     value="{{ field.value|default:'' }}"
+                     onfocus="desformatearPrecio(this)"
+                     onblur="formatearPrecio(this)">
+            {% else %}
+              {{ field }}
+            {% endif %}
+            {% if field.help_text %}
+              <div class="form-text">{{ field.help_text }}</div>
+            {% endif %}
+            {% for error in field.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+
+      <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+        <button type="submit" class="btn btn-primary">💾 Guardar</button>
+        <a href="{% url 'admin_productos' %}" class="btn btn-secondary">↩️ Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Scripts para formatear precio -->
+<script>
+  function formatearNumero(valor) {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(valor);
+  }
+
+  function desformatearNumero(texto) {
+    return texto.replace(/[^\d,]/g, '').replace(',', '.');
+  }
+
+  function desformatearPrecio(input) {
+    const valor = desformatearNumero(input.value);
+    input.value = parseFloat(valor) || '';
+  }
+
+  function formatearPrecio(input) {
+    const valorNumerico = parseFloat(input.value);
+    if (!isNaN(valorNumerico)) {
+      input.value = formatearNumero(valorNumerico);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const precioInput = document.getElementById('precio');
+    if (precioInput && precioInput.value) {
+      formatearPrecio(precioInput);
+    }
+  });
+</script>
+{% endblock %}

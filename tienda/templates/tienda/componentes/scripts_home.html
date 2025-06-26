@@ -1,0 +1,176 @@
+<script>
+  function formatearPrecioARS(valor) {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 2
+    }).format(valor);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const chatInput = document.getElementById("chat-input");
+    const sendButton = document.getElementById("send-chat");
+    const productosContainer = document.getElementById("productos-container");
+
+    function enviarMensaje(event) {
+      event.preventDefault();
+      const userMessage = chatInput.value.trim();
+      if (!userMessage) return;
+
+      chatInput.value = "";
+
+      fetch("{% url 'chat_ia' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: `message=${encodeURIComponent(userMessage)}`,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          productosContainer.innerHTML = "";
+          document.getElementById("btn-ver-todos").style.display = "inline-block";
+
+          if (data.productos.length === 0) {
+            productosContainer.innerHTML = `<p class="text-center">No se encontraron productos.</p>`;
+            return;
+          }
+
+          data.productos.forEach((producto) => {
+            productosContainer.innerHTML += `
+              <div class="col-md-4 mb-4" data-aos="fade-up">
+                <div class="card h-100 shadow-lg">
+                  <img src="${producto.imagen}" class="card-img-top d-none" alt="${producto.nombre}" style="height: 250px; object-fit: contain;">
+                  <div class="card-body text-center">
+                    <h5 class="card-title">${producto.nombre}</h5>
+                    <p class="card-text fw-bold text-success">${formatearPrecioARS(producto.precio)}</p>
+                    <button class="btn btn-info w-100 ver-detalle" data-id="${producto.id}">🔍 Ver Detalle</button>
+                  </div>
+                </div>
+              </div>`;
+          });
+        })
+        .catch((error) => console.error("Error con IA:", error));
+    }
+
+    document.getElementById("ia-form").addEventListener("submit", enviarMensaje);
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    let modalElement = document.getElementById("detalleModal");
+    let modalDetalle = new bootstrap.Modal(modalElement);
+    let modalCargandoElement = document.getElementById("modalCargando");
+    let modalCargando = new bootstrap.Modal(modalCargandoElement);
+    let btnAgregarCarrito = document.getElementById("btn-agregar-carrito");
+    let productoIdSeleccionado = null;
+
+    document.addEventListener("click", function (event) {
+      if (event.target.classList.contains("ver-detalle")) {
+        productoIdSeleccionado = event.target.getAttribute("data-id");
+
+        fetch(`/detalle-producto/${productoIdSeleccionado}/`)
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("detalle-nombre").innerText = data.nombre;
+            document.getElementById("detalle-descripcion").innerText = data.descripcion;
+            document.getElementById("detalle-precio").innerText = formatearPrecioARS(data.precio);
+            document.getElementById("detalle-imagen").src = data.imagen || "https://via.placeholder.com/500";
+            modalDetalle.show();
+          })
+          .catch((error) => console.error("Error cargando detalle:", error));
+      }
+    });
+
+    modalElement.addEventListener("show.bs.modal", function () {
+      document.getElementById("detalle-cantidad").value = 1;
+    });
+
+    btnAgregarCarrito.addEventListener("click", function () {
+      let cantidad = document.getElementById("detalle-cantidad").value;
+      modalCargando.show();
+
+      fetch(`/agregar-al-carrito/${productoIdSeleccionado}/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: `cantidad=${encodeURIComponent(cantidad)}`,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            let mensajeCarrito = document.getElementById("mensaje-carrito");
+            mensajeCarrito.innerText = data.message;
+            mensajeCarrito.style.display = "block";
+            setTimeout(() => mensajeCarrito.style.display = "none", 3000);
+          }
+        })
+        .catch((error) => console.error("Error al agregar al carrito:", error))
+        .finally(() => {
+          setTimeout(() => {
+            modalCargando.hide();
+            eliminarBackdrop();
+          }, 500);
+
+          setTimeout(() => {
+            modalDetalle.hide();
+            eliminarBackdrop();
+          }, 600);
+
+          fetch("/obtener-total-carrito/")
+            .then((response) => response.json())
+            .then((data) => {
+              document.getElementById("total-carrito").innerText = `🛒 Total Carrito: ${formatearPrecioARS(data.total)}`;
+            })
+            .catch((error) => console.error("Error obteniendo total:", error));
+        });
+    });
+
+    modalElement.addEventListener("hidden.bs.modal", eliminarBackdrop);
+    modalCargandoElement.addEventListener("hidden.bs.modal", eliminarBackdrop);
+
+    function eliminarBackdrop() {
+      setTimeout(() => {
+        document.querySelectorAll(".modal-backdrop").forEach((b) => b.remove());
+        document.body.classList.remove("modal-open");
+      }, 100);
+    }
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    AOS.init({ duration: 1000, easing: "ease-in-out", once: true, mirror: false });
+  });
+
+  document.getElementById("btn-ver-todos").addEventListener("click", function () {
+    fetch("{% url 'obtener_productos' %}")
+      .then(response => response.json())
+      .then(data => {
+        const productosContainer = document.getElementById("productos-container");
+        productosContainer.innerHTML = "";
+
+        if (data.productos.length === 0) {
+          productosContainer.innerHTML = `<p class="text-center">No hay productos disponibles.</p>`;
+          return;
+        }
+
+        document.getElementById("btn-ver-todos").style.display = "none";
+
+        data.productos.forEach(producto => {
+          productosContainer.innerHTML += `
+            <div class="col-md-4 mb-4" data-aos="fade-up">
+              <div class="card h-100 shadow-lg">
+                <img src="${producto.imagen}" class="card-img-top" alt="${producto.nombre}" style="height: 250px; object-fit: contain;">
+                <div class="card-body text-center">
+                  <h5 class="card-title">${producto.nombre}</h5>
+                  <p class="card-text fw-bold text-success">${formatearPrecioARS(producto.precio)}</p>
+                  <button class="btn btn-info w-100 ver-detalle" data-id="${producto.id}">🔍 Ver Detalle</button>
+                </div>
+              </div>
+            </div>`;
+        });
+      })
+      .catch(error => console.error("Error cargando productos:", error));
+  });
+</script>
